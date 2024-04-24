@@ -1,0 +1,16 @@
+As of now, Turtle Checkpoint 2 is not fully operational for WSL2. 
+The biggest roadblock to the end of that checkpoint is that WSL2 does not want to open any camera, 
+even one successfully bound and shared with the Linux subsystem. 
+Future work needs to uncover whether this is a WSL2 issue or an OpenCV issue.
+
+To progress to where the issue occurs, complete the following steps:
+1. Source ROS2 from the local /opt/.../setup.bash
+2. Ensure the packages are built with colcon build
+3. Source ROS2 from the install folder in the Middleware directory .../install/setup.bash
+4. Install USBPID for Windows using this information: https://github.com/dorssel/usbipd-win/wiki/WSL-support
+5. In an Admistrative Command Prompt, run the command usbipd list. This should show all information for all connected
+USB devices. Identify the camera you'd like to use.
+6. Run the command usbipd bind --busid CAMERA_BUSID. This binds the camera's usage to the software.
+7. Run the command usbipd attach --wsl --busid CAMERA_BUSID. This should share the bound camera to WSL.
+8. Returning to your Linux Terminal, enter the command lsusb. You should see the shared camera in the list
+9. Try to run the command ros2 run webcam webcam_pub in the Middleware's src directory. This is where the failure occurs.
