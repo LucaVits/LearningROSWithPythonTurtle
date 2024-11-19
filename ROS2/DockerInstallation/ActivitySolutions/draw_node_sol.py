@@ -1,5 +1,3 @@
-# UNFINISHED
-
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
@@ -11,15 +9,13 @@ import colorsys
 
 star = [(5.0, 1.0), (7.0, 8.0), (1.0, 7.0), (9.0, 7.0), (3.0, 8.0)]
 
-zizag = [(1.0, 1.0), (2.0, 2.0), (3.0, 1.0), (4.0, 2.0), (5.0, 1.0)]
+zigzag = [(1.0, 1.0), (2.0, 2.0), (3.0, 1.0), (4.0, 2.0), (5.0, 1.0)]
 
-goals = star
+goals = zigzag
 
 class DrawNode(Node):
     def __init__(self):
-        super().__init__('right_left_node')
-        
-        self.going_right = False
+        super().__init__('draw_node')        
         self.next_goal = 0
         
         self.pose_subscriber = self.create_subscription(Pose, '/turtle1/pose', self.pose_callback, 10)
@@ -40,12 +36,10 @@ class DrawNode(Node):
     
     def set_pen(self, r, g, b):
         req = SetPen.Request()
-        print("bouta set a pen")
         req.r = r
         req.g = g
         req.b = b
-        print("so close to setting a pen")
-        print(r)
+        req.width = 2
         self.set_pen_client.call_async(req)
         # We don't care what the result is, so don't return it
                 
@@ -60,14 +54,14 @@ class DrawNode(Node):
         y_dist = goals[self.next_goal][1] - pos.y
         
         desired_angle = math.atan2(y_dist, x_dist)
-        print(desired_angle, pos.theta, desired_angle - pos.theta)
-        vel.angular.z = 2 * (desired_angle - pos.theta)
+        err_angle = normalize_angle(desired_angle - pos.theta)
+        vel.angular.z = 1 * err_angle
         vel.linear.x = 1.0
         
         self.velocity_publisher.publish(vel)
     
     def close_to_pos(self, cur_pos, next_pos):
-        epsilon = 0.1
+        epsilon = 0.01
         return abs(next_pos[0] - cur_pos.x) < epsilon and (next_pos[1] - cur_pos.y) < epsilon
         
     
@@ -76,12 +70,20 @@ def main(args=None):
     rclpy.init(args=args)
     draw_node = DrawNode()
     rclpy.spin(draw_node)
+    draw_node.destroy_node()
 
-def normalize(vec):
+def normalize_vector(vec):
     magnitude = (vec[0]**2 + vec[1]**2)**0.5
     if magnitude == 0:
         return (0, 0)
     return (vec[0] / magnitude, vec[1] / magnitude)
+
+def normalize_angle(angle):
+    if (angle > math.pi):
+        angle -= 2 * math.pi
+    elif angle < -math.pi:
+        angle += 2 * math.pi
+    return angle
 
 """
 rgb_generator takes a value between 0 and 1 (inclusive), and returns R, G, and B
