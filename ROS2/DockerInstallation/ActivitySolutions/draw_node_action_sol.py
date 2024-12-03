@@ -7,6 +7,7 @@ from geometry_msgs.msg import Twist
 from rclpy import Future
 from rclpy.action import ActionClient
 from rclpy.action.client import ClientGoalHandle
+from rclpy.action.client import GoalStatus
 from rclpy.node import Node
 from turtlesim.action import RotateAbsolute
 from turtlesim.msg import Pose
@@ -69,7 +70,7 @@ class DrawNode(Node):
             self.rotate_goal_future = self.rotate_to_goal(desired_angle)
 
         goal_handle: ClientGoalHandle = self.rotate_goal_future.result()
-        if goal_handle is None or goal_handle.status != 4:
+        if goal_handle is None or goal_handle.status != GoalStatus.STATUS_SUCCEEDED:
             print('Wating for turn to finish...')
         else:
             print('Moving!')
