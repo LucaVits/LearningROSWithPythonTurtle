@@ -27,6 +27,9 @@ winget install --id 7zip.7zip
 REM PYTHON
 winget install --id Python.Python.3.8 -v 3.8.3
 
+python -3.8.3 -m pip install -U pip setuptools==59.6.0
+python -3.8.3 -m pip install -U catkin_pkg cryptography empy importlib-metadata lark==1.1.1 lxml matplotlib netifaces numpy opencv-python PyQt5 pillow psutil pycairo pydot pyparsing==2.4.7 pyyaml rosdistro
+
 
 REM VISUAL C++ LIBS
 winget install --id Microsoft.VCRedist.2013.x64
@@ -89,7 +92,6 @@ REM Install OpenCV
 set "opencvurl=https://github.com/ros2/ros2/releases/download/opencv-archives/opencv-3.4.6-vc16.VS2019.zip”
 set "opencvzipfile=opencv-3.4.6-vc16.VS2019.zip"
 
-
 curl -o "%opencvzipfile%" "%opencvurl%"
 if not exist "%opencvzipfile%" (
     echo Download failed. Exiting...
@@ -111,3 +113,19 @@ if not exist "C:\opencv" (
 
 REM CMake
 winget install --id Kitware.CMake
+set "CMAKE_BIN=C:\Program Files\CMake\bin"
+:: Add CMake bin to PATH for the current session
+setx /m PATH "%CMAKE_BIN%;%PATH%"
+:: Verify that CMake is available, TO DO - add check if this returns an error
+cmake --version
+
+
+REM Random Choco Dependencies (From Offical ROS2 Repo)
+curl -O "https://github.com/ros2/choco-packages/releases/download/2022-03-15/asio.1.12.1.nupkg"
+curl -O "https://github.com/ros2/choco-packages/releases/download/2022-03-15/bullet.3.17.nupkg"
+curl -O "https://github.com/ros2/choco-packages/releases/download/2022-03-15/cunit.2.1.3.nupkg"
+curl -O "https://github.com/ros2/choco-packages/releases/download/2022-03-15/eigen.3.3.4.nupkg"
+curl -O "https://github.com/ros2/choco-packages/releases/download/2022-03-15/tinyxml-usestl.2.6.2.nupkg"
+curl -O "https://github.com/ros2/choco-packages/releases/download/2022-03-15/tinyxml2.6.0.0.nupkg"
+
+choco install -y -s %CD% asio cunit eigen tinyxml-usestl tinyxml2 bullet
