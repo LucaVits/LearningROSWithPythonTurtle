@@ -5,12 +5,21 @@ To Install ROS2 on Windows, official documentation gives installation instructio
 This guide exists to install ROS2 distributions with some Chocolatey packages & some native packages by relying off Microsoft's 1st party Windows package manager: winget. The script should prompt users when their interaction is needed.
 
 
-To start installing dependencies for ROS2
+To start installing dependencies for ROS2, The Windows package manager (winget) needs to be installed.
+simply open a command promt as administrator, and run the following:
+
+```
+winget upgrade Microsoft.AppInstaller
+```
 
 Next, download the InstallDeps.bat file found in this repo. Then right click, and RUN AS ADMINISTRATOR!
-User intervention is only required for windows UAC requests, and for Visual Studio Community 2019
+User intervention is only required for windows UAC requests, Visual Studio Community 2019, and GraphViz (RQt)
 
-For VS 2019 check the ___ box. Then **UNCHECK C++ CMake tools!!!** This step is absolutely **CRUCIAL** as cmake will be sourced from somewhere else in a later step in this install script
+- VS 2019
+check the ___ box. Then **UNCHECK C++ CMake tools!!!** This step is absolutely **CRUCIAL** as cmake will be sourced from somewhere else in a later step in this install script
+
+- GraphViz (needed for RQt)
+The installer needs to be clicked through. After agreeing to the licence, chose to either "Add Graphviz to the system PATH for all users" or for "current user". This is required for ROS2 to invoke Graphviz.
 
 
 This will automatically install all necessary dependencies for ROS2 Humble from various places. The programs installed are as follows:
@@ -24,6 +33,7 @@ This will automatically install all necessary dependencies for ROS2 Humble from 
 - Visual Studio Community (2019) [microsoft website]
 - OpenCV (3.4.6) [ROS2 github archive]
 - Cmake (latest) [winget]
+- GraphViz (12.2.1) [website]
 - ROS2 Humble (latest) [website]
 
 After this process is complete, your machine is now ready to run a ROS2 installation. This guide was built around ROS2 Humble, but should work for various versions of ROS2 (untested). The version of ROS2 can be swapped out inside the batch script for easy access.

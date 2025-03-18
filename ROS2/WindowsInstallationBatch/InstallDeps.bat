@@ -17,11 +17,11 @@ if not exist "%zipPath%" (
     echo 7-Zip not found at %zipPath%. Exiting...
     exit /b 1
 )
-
 REM NEEDS TO BE INSTRUCTED TO INSTALL APP INSTALLER FROM WINDOWS STORE BEFORE RUNNING THIS SCRIPT
 
 
-REM Install Chocolatey
+
+REM INSTALL Chocolatey
 ::Check user policy before attempting chocolatey install
 ::for loop to parse through execution policy var (not working)
 ::Should not be required, powershell script for choco now has built in execution policy Bypass
@@ -39,29 +39,34 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "[System.Net.ServicePoint
 pause
 
 
-REM INSTALL 7zip
+
+REM INSTALL 7-zip
 winget install --id 7zip.7zip
 
 
-REM PYTHON
+
+REM INSTALL Python
 winget install --id Python.Python.3.8 -v 3.8.3
 py -3.8.3 -m pip install -U pip setuptools==59.6.0
 py -3.8.3 -m pip install -U catkin_pkg cryptography empy importlib-metadata lark==1.1.1 lxml matplotlib netifaces numpy opencv-python PyQt5 pillow psutil pycairo pydot pyparsing==2.4.7 pyyaml rosdistro
 
 
-REM VISUAL C++ LIBS
+
+REM INSTALL Visual C++ Libraries
 winget install --id Microsoft.VCRedist.2013.x64
 winget install --id Microsoft.VCRedist.2013.x86
 winget install --id Microsoft.VCRedist.2015+.x64
 winget install --id Microsoft.VCRedist.2015+.x86
 
 
-REM OPENSSL
+
+REM INSTALL OpenSSL
 choco install -y openssl --version 1.1.1.2100
 setx /m OPENSSL_CONF "C:\Program Files\OpenSSL-Win64\bin\openssl.cfg"
 
 
-REM VISUAL STUDIO
+
+REM INSTALL Visual Studio Community 2019
 set "vsurl=https://aka.ms/vs/16/release/vs_community.exe"
 set "vsfilename=program-installer.exe"
 
@@ -78,7 +83,7 @@ echo VS Studio 19 install complete.
 
 
 
-REM Install OpenCV
+REM INSTALL OpenCV
 set "opencvurl=https://github.com/ros2/ros2/releases/download/opencv-archives/opencv-3.4.6-vc16.VS2019.zip”
 set "opencvzipfile=opencv-3.4.6-vc16.VS2019.zip"
 
@@ -101,7 +106,8 @@ if not exist "C:\opencv" (
 )
 
 
-REM CMake
+
+REM INSTALL CMake
 winget install --id Kitware.CMake
 set "CMAKE_BIN=C:\Program Files\CMake\bin"
 :: Add CMake bin to PATH for the current session
@@ -110,7 +116,8 @@ setx /m PATH "%CMAKE_BIN%;%PATH%"
 cmake --version
 
 
-REM Random Choco Dependencies (From Offical ROS2 Repo)
+
+REM INSTALL Random Choco Dependencies (From Offical ROS2 Repo)
 curl -O "https://github.com/ros2/choco-packages/releases/download/2022-03-15/asio.1.12.1.nupkg"
 curl -O "https://github.com/ros2/choco-packages/releases/download/2022-03-15/bullet.3.17.nupkg"
 curl -O "https://github.com/ros2/choco-packages/releases/download/2022-03-15/cunit.2.1.3.nupkg"
@@ -119,6 +126,7 @@ curl -O "https://github.com/ros2/choco-packages/releases/download/2022-03-15/tin
 curl -O "https://github.com/ros2/choco-packages/releases/download/2022-03-15/tinyxml2.6.0.0.nupkg"
 
 choco install -y -s %CD% asio cunit eigen tinyxml-usestl tinyxml2 bullet
+
 
 
 REM INSTALL Qt5
@@ -134,8 +142,14 @@ setx /m QT_QPA_PLATFORM_PLUGIN_PATH C:\Qt\Qt5.12.12\5.12.12\msvc2017_64\plugins\
 echo Qt5 install complete
 
 
-REM INSTALL RQt
 
+REM INSTALL Graphviz (needed for RQt)
+curl -o "https://gitlab.com/api/v4/projects/4207231/packages/generic/graphviz-releases/12.2.1/windows_10_cmake_Release_graphviz-install-12.2.1-win64.exe"
+::TODO
+::unzip
+::run exe
+::add error checks
+	
 
 
 
@@ -143,6 +157,9 @@ REM INSTALL RQt
 REM Time to install ROS2 Humble!
 REM Edit the line below to a different version of ROS2 for your needs.
 curl -o "https://github.com/ros2/ros2/releases/download/release-jazzy-20241223/ros2-jazzy-20241223-windows-release-amd64.zip"
-
+::TODO
+::unzip
+::run exe
+::add error checks
 
 endlocal
