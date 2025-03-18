@@ -121,4 +121,28 @@ curl -O "https://github.com/ros2/choco-packages/releases/download/2022-03-15/tin
 choco install -y -s %CD% asio cunit eigen tinyxml-usestl tinyxml2 bullet
 
 
+REM INSTALL Qt5
+curl -o "https://download.qt.io/official_releases/qt/5.15/5.15.2/single/qt-everywhere-src-5.15.2.zip"
+::TODO
+::unzip
+::run exe
+::add error checks
+
+setx /m Qt5_DIR C:\Qt\Qt5.12.12\5.12.12\msvc2017_64
+setx /m QT_QPA_PLATFORM_PLUGIN_PATH C:\Qt\Qt5.12.12\5.12.12\msvc2017_64\plugins\platforms
+
+echo Qt5 install complete
+
+
+REM INSTALL RQt
+
+
+
+
+
+REM Time to install ROS2 Humble!
+REM Edit the line below to a different version of ROS2 for your needs.
+curl -o "https://github.com/ros2/ros2/releases/download/release-jazzy-20241223/ros2-jazzy-20241223-windows-release-amd64.zip"
+
+
 endlocal
