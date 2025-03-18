@@ -6,18 +6,19 @@ REM USER SHOULD BE INSTRUCTED TO INSTALL APP INSTALLER FROM WINDOWS STORE BEFORE
 
 REM Install Chocolatey
 ::Check user policy before attempting chocolatey install
-::for loop to parse through execution policy var
-for /f "delims=" %%E in ('powershell -Command "Get-ExecutionPolicy"') do set POLICY=%%E
+::for loop to parse through execution policy var (not working yet)
+for /f "delims=" %%i in ('powershell -Command "Get-ExecutionPolicy"') do set POLICY=%%i
 
 if /I "%POLICY%"=="Restricted" (
-    powershell -Command "Set-ExecutionPolicy AllSigned -Force"
-    echo Execution policy changed to AllSigned for Chocolatey Install
-)
-else (
+    ::powershell -Command "Set-ExecutionPolicy AllSigned -Force"
+		::DO NOT USE ABOVE! Unsafe and results in permission issues in this script
+    echo Execution policy is restricted. Setting policy to be bypassed for the install of Chocolatey
+) else (
     echo Execution policy is already set to %POLICY%. Proceeding to Chocolatey Install
 )
 ::Run offical chocolatey install command
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+powershell -NoProfile -ExecutionPolicy Bypass -Command "[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))"
+pause
 
 
 REM INSTALL 7zip
@@ -81,7 +82,7 @@ if not exist "%vsfilename%" (
 )
 
 REM MUST MUST MUST Prompt user to uncheck "C++ CMake tools for Windows"
-start vs_community.exe
+start /wait vs_community.exe
 
 REM to-do, wait for user to finish installing
 echo Installation and setup completed.
