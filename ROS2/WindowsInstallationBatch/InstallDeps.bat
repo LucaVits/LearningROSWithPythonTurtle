@@ -10,8 +10,15 @@ set "curlPath=%SystemRoot%\System32\curl.exe"
 if not exist "%curlPath%" (
     echo curl not found at %zipPath%. Check if you are on Windows 10/11. Exiting...
     exit /b 1
-REM same with 7zip. This is simpler than adding to PATH & forcing user to reboot:
+
+
+
+REM INSTALL 7-zip
+winget install --id 7zip.7zip
+
+REM use absolute path for 7zip. This is simpler than adding to PATH & forcing user to reboot:
 set "zipPath=%ProgramFiles%\7-Zip\7z.exe"
+
 :: Check if 7-Zip executable exists here
 if not exist "%zipPath%" (
     echo 7-Zip not found at %zipPath%. Exiting...
@@ -40,11 +47,6 @@ pause
 
 
 
-REM INSTALL 7-zip
-winget install --id 7zip.7zip
-
-
-
 REM INSTALL Python
 winget install --id Python.Python.3.8 -v 3.8.3
 py -3.8.3 -m pip install -U pip setuptools==59.6.0
@@ -70,6 +72,8 @@ REM INSTALL Visual Studio Community 2019
 set "vsurl=https://aka.ms/vs/16/release/vs_community.exe"
 set "vsfilename=program-installer.exe"
 
+
+echo Downloading Visual Studio Community 2019...
 curl -o "%vsfilename%" "%vsurl%"
 if not exist "%vsfilename%" (
     echo Download failed. URL unreachable. Exiting...
@@ -93,7 +97,7 @@ if not exist "%opencvzipfile%" (
     exit /b 1
 )
 
-"%7zipPath%" x "%opencvzipfile%" -o"%USERPROFILE%\Downloads"
+"%zipPath%" x "%opencvzipfile%" -o"%USERPROFILE%\Downloads"
 if not exist "%USERPROFILE%\Downloads" (
     echo Extraction failed. Exiting...
     exit /b 1
@@ -110,10 +114,16 @@ if not exist "C:\opencv" (
 REM INSTALL CMake
 winget install --id Kitware.CMake
 set "CMAKE_BIN=C:\Program Files\CMake\bin"
+
 :: Add CMake bin to PATH for the current session
 setx /m PATH "%CMAKE_BIN%;%PATH%"
-:: Verify that CMake is available, TO DO - add check if this returns an error
+
+:: Verify that CMake is available
 cmake --version
+if %errorlevel% neq 0 (
+    echo Error: CMake version check failed. Exiting...
+    exit /b 1
+)
 
 
 
@@ -130,11 +140,27 @@ choco install -y -s %CD% asio cunit eigen tinyxml-usestl tinyxml2 bullet
 
 
 REM INSTALL Qt5
-curl -o "https://download.qt.io/official_releases/qt/5.15/5.15.2/single/qt-everywhere-src-5.15.2.zip"
-::TODO
-::unzip
-::run exe
-::add error checks
+REM Set the download URL and filename
+set "qtDownloadUrl=https://download.qt.io/official_releases/qt/5.15/5.15.2/single/qt-everywhere-src-5.15.2.zip"
+set "qtZipFile=qt-everywhere-src-5.15.2.zip"
+set "qtExtractDir=Qt-5.15.2-Installer"
+
+echo Downloading Qt 5.15.2 source code...
+"%curlPath%" -o "%qtZipFile%" "%qtDownloadUrl%"
+if not exist "%qtZipFile%" (
+    echo Error: Failed to download Qt source code. Exiting...
+    exit /b 1
+)
+
+echo Extracting Qt Installer from zip...
+"%zipPath%" x "%qtZipFile%" -o "%CD%"
+if not exist "%qtExtractDir%" (
+    echo Error: Extraction failed. Exiting...
+    exit /b 1
+)
+
+echo Running Qt5 Installer...
+start /wait ./%qtExtractDir%/qt-everywhere-src-5.15.2.exe
 
 setx /m Qt5_DIR C:\Qt\Qt5.12.12\5.12.12\msvc2017_64
 setx /m QT_QPA_PLATFORM_PLUGIN_PATH C:\Qt\Qt5.12.12\5.12.12\msvc2017_64\plugins\platforms
@@ -144,14 +170,19 @@ echo Qt5 install complete
 
 
 REM INSTALL Graphviz (needed for RQt)
-curl -o "https://gitlab.com/api/v4/projects/4207231/packages/generic/graphviz-releases/12.2.1/windows_10_cmake_Release_graphviz-install-12.2.1-win64.exe"
-::TODO
-::unzip
-::run exe
-::add error checks
-	
+set "graphvizurl=https://gitlab.com/api/v4/projects/4207231/packages/generic/graphviz-releases/12.2.1/windows_10_cmake_Release_graphviz-install-12.2.1-win64.exe”
+set "graphvizfile=windows_10_cmake_Release_graphviz-install-12.2.1-win64.exe"
 
+echo Downloading Graphviz 12.2.1...
+"%curlPath%" -o "%graphviz%"
+if not exist "%graphvizfile%" (
+    echo Download failed. Exiting...
+    exit /b 1
+)
 
+start /wait windows_10_cmake_Release_graphviz-install-12.2.1-win64.exe
+echo GraphViz install complete.
+ 
 
 
 REM Time to install ROS2 Humble!
