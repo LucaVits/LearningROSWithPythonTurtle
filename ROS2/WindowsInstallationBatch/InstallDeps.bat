@@ -140,7 +140,6 @@ choco install -y -s %CD% asio cunit eigen tinyxml-usestl tinyxml2 bullet
 
 
 REM INSTALL Qt5
-REM Set the download URL and filename
 set "qtDownloadUrl=https://download.qt.io/official_releases/qt/5.15/5.15.2/single/qt-everywhere-src-5.15.2.zip"
 set "qtZipFile=qt-everywhere-src-5.15.2.zip"
 set "qtExtractDir=Qt-5.15.2-Installer"
@@ -187,10 +186,31 @@ echo GraphViz install complete.
 
 REM Time to install ROS2 Humble!
 REM Edit the line below to a different version of ROS2 for your needs.
-curl -o "https://github.com/ros2/ros2/releases/download/release-jazzy-20241223/ros2-jazzy-20241223-windows-release-amd64.zip"
-::TODO
-::unzip
-::run exe
-::add error checks
+set "ros2DownloadUrl=https://github.com/ros2/ros2/releases/download/release-humble-20241205/ros2-humble-20241205-windows-release-amd64.zip"
+set "ros2ZipFile=ros2-humble-20241205-windows-release-amd64.zip"
+set "ros2ExtractDir=ros2-humble-20241205-windows-release-amd64"
+
+echo Downloading Qt 5.15.2 source code...
+"%curlPath%" -o "%ros2ZipFile%" "%ros2DownloadUrl%"
+if not exist "%ros2ZipFile%" (
+    echo Error: Failed to download ROS2 Humble. Exiting...
+    exit /b 1
+)
+
+echo Extracting ROS2 from zip...
+"%zipPath%" x "%ros2ZipFile%" -o "%CD%"
+if not exist "%ros2ExtractDir%" (
+    echo Error: Extraction failed. Exiting...
+    exit /b 1
+)
+
+echo Running ROS2 Installer...
+start /wait ./%ros2ExtractDir%/ros2-humble-20241205-windows-release-amd64.exe
+
+echo ROS2 install complete
+
+echo All Installations Successful!
+REM This is a "press any button to continue" statement after the install is complete
+pause
 
 endlocal
