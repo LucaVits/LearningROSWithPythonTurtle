@@ -1,5 +1,37 @@
 @echo off
-setlocal
+setlocal ENABLEDELAYEDEXPANSION
+
+:: Prerequisite Checks:
+
+REM 1) Administrator privileges
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+  echo [ERROR] This script requires Administrator privileges. Please right‑click and “Run as administrator.”
+  exit /b 1
+)
+
+REM 2) winget availability
+where winget >nul 2>&1
+if %errorlevel% neq 0 (
+  echo [ERROR] winget not found. Install “App Installer” from the Microsoft Store.  
+  exit /b 1
+)
+
+REM 3) curl availability
+:: Unused becuase curl path is set to absolute path
+:: where curl >nul 2>&1
+:: if %errorlevel% neq 0 (
+::   echo [ERROR] curl not found. Ensure you’re on Windows 10/11 and curl.exe is available. Also ensure \System32\curl.exe is in your system PATH
+::   exit /b 1
+:: )
+
+:: Set Absolute Paths for system files used in installation
+
+REM set working directory to Downloads to avoid System32 permission issues
+cd "%userprofile%\Downloads"
+
+REM use absolute path for curl
+set "curlPath=%SystemRoot%\System32\curl.exe"
 
 REM set user to downloads folder to avoid permission issues in System32
 cd "%userprofile%/Downloads"
@@ -8,7 +40,7 @@ REM use absolute path for curl. Not sure why curl -o can't just be called on it'
 set "curlPath=%SystemRoot%\System32\curl.exe"
 :: Check if system's curl executable exists here
 if not exist "%curlPath%" (
-    echo curl not found at %zipPath%. Check if you are on Windows 10/11. Exiting...
+    echo curl not found at %curlPath%. Check if you are on Windows 10/11. Exiting...
     exit /b 1
 
 
