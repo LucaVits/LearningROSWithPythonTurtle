@@ -1,6 +1,21 @@
 @echo off
 setlocal ENABLEDELAYEDEXPANSION
 
+:: EDIT THIS LINE BELOW TO CHANGE THE VERSION OF ROS2 INSTALLED
+set "ROS2_VERSION=release-humble-20241205"
+REM The URL and zip file variables below will update based on the version inputted above, no need to edit these unless the upstream file structure has changed
+set "ROS2_ZIP=ros2-%ROS2_VERSION%-windows-release-amd64.zip"
+set "ROS2_URL=https://github.com/ros2/ros2/releases/download/%ROS2_VERSION%/%ROS2_ZIP%"
+set "ROS2_EXTRACTDIR=%ROS2_VERSION%-windows-release-amd64"
+
+:: Enable a log
+set LOGFILE=%USERPROFILE%\Downloads\ros2_install.log
+(
+  echo ==== ROS2 Install started at %DATE% %TIME% ====
+  REM … rest of script …
+  echo ==== Completed at %DATE% %TIME% ====
+)>>"%LOGFILE%" 2>&1
+
 :: Prerequisite Checks:
 
 REM 1) Administrator privileges
@@ -28,16 +43,11 @@ REM 3) curl availability
 :: Set Absolute Paths for system files used in installation
 
 REM set working directory to Downloads to avoid System32 permission issues
-cd "%userprofile%\Downloads"
-
-REM use absolute path for curl
-set "curlPath=%SystemRoot%\System32\curl.exe"
-
-REM set user to downloads folder to avoid permission issues in System32
-cd "%userprofile%/Downloads"
+cd "%USERPROFILE%\Downloads"
 
 REM use absolute path for curl. Not sure why curl -o can't just be called on it's own
 set "curlPath=%SystemRoot%\System32\curl.exe"
+
 :: Check if system's curl executable exists here
 if not exist "%curlPath%" (
     echo curl not found at %curlPath%. Check if you are on Windows 10/11. Exiting...
@@ -47,6 +57,10 @@ if not exist "%curlPath%" (
 
 REM INSTALL 7-zip
 winget install --id 7zip.7zip
+if %ERRORLEVEL% neq 0 (
+  echo 7-Zip install failed. Exiting...
+  exit /b 1
+)
 
 REM use absolute path for 7zip. This is simpler than adding to PATH & forcing user to reboot:
 set "zipPath=%ProgramFiles%\7-Zip\7z.exe"
@@ -75,7 +89,6 @@ if /I "%POLICY%"=="Restricted" (
 )
 ::Run offical chocolatey install command
 powershell -NoProfile -ExecutionPolicy Bypass -Command "[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))"
-pause
 
 
 
@@ -88,14 +101,34 @@ py -3.8.3 -m pip install -U catkin_pkg cryptography empy importlib-metadata lark
 
 REM INSTALL Visual C++ Libraries
 winget install --id Microsoft.VCRedist.2013.x64
+if %ERRORLEVEL% neq 0 (
+  echo Microsoft Visual C++ 2013 (x64) install failed. Exiting...
+  exit /b 1
+)
 winget install --id Microsoft.VCRedist.2013.x86
+if %ERRORLEVEL% neq 0 (
+  echo Microsoft Visual C++ 2013 (x86) install failed. Exiting...
+  exit /b 1
+)
 winget install --id Microsoft.VCRedist.2015+.x64
+if %ERRORLEVEL% neq 0 (
+  echo Microsoft Visual C++ 2015+ (x64) install failed. Exiting...
+  exit /b 1
+)
 winget install --id Microsoft.VCRedist.2015+.x86
+if %ERRORLEVEL% neq 0 (
+  echo Microsoft Visual C++ 2015+ (x86) install failed. Exiting...
+  exit /b 1
+)
 
 
 
 REM INSTALL OpenSSL
 choco install -y openssl --version 1.1.1.2100
+if %ERRORLEVEL% neq 0 (
+  echo OpenSSL install failed. Exiting...
+  exit /b 1
+)
 setx /m OPENSSL_CONF "C:\Program Files\OpenSSL-Win64\bin\openssl.cfg"
 
 
@@ -145,6 +178,10 @@ if not exist "C:\opencv" (
 
 REM INSTALL CMake
 winget install --id Kitware.CMake
+if %ERRORLEVEL% neq 0 (
+  echo CMake install failed. Exiting...
+  exit /b 1
+)
 set "CMAKE_BIN=C:\Program Files\CMake\bin"
 
 :: Add CMake bin to PATH for the current session
@@ -168,7 +205,10 @@ curl -O "https://github.com/ros2/choco-packages/releases/download/2022-03-15/tin
 curl -O "https://github.com/ros2/choco-packages/releases/download/2022-03-15/tinyxml2.6.0.0.nupkg"
 
 choco install -y -s %CD% asio cunit eigen tinyxml-usestl tinyxml2 bullet
-
+if %ERRORLEVEL% neq 0 (
+  echo Misc. dependencies from ROS2 website failed to install. Exiting...
+  exit /b 1
+)
 
 
 REM INSTALL Qt5
@@ -217,27 +257,23 @@ echo GraphViz install complete.
 
 
 REM Time to install ROS2 Humble!
-REM Edit the line below to a different version of ROS2 for your needs.
-set "ros2DownloadUrl=https://github.com/ros2/ros2/releases/download/release-humble-20241205/ros2-humble-20241205-windows-release-amd64.zip"
-set "ros2ZipFile=ros2-humble-20241205-windows-release-amd64.zip"
-set "ros2ExtractDir=ros2-humble-20241205-windows-release-amd64"
 
 echo Downloading Qt 5.15.2 source code...
-"%curlPath%" -o "%ros2ZipFile%" "%ros2DownloadUrl%"
-if not exist "%ros2ZipFile%" (
+"%curlPath%" -o "%ROS2_ZIP%" "%ROS2_URL%"
+if not exist "%ROS2_ZIP%" (
     echo Error: Failed to download ROS2 Humble. Exiting...
     exit /b 1
 )
 
 echo Extracting ROS2 from zip...
-"%zipPath%" x "%ros2ZipFile%" -o "%CD%"
-if not exist "%ros2ExtractDir%" (
+"%zipPath%" x "%ROS2_ZIP%" -o "%CD%"
+if not exist "%ROS2_EXTRACTDIR%" (
     echo Error: Extraction failed. Exiting...
     exit /b 1
 )
 
 echo Running ROS2 Installer...
-start /wait ./%ros2ExtractDir%/ros2-humble-20241205-windows-release-amd64.exe
+start /wait ./%ROS2_EXTRACTDIR%/ros2-humble-20241205-windows-release-amd64.exe
 
 echo ROS2 install complete
 
