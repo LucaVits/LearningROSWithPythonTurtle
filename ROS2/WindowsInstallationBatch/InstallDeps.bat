@@ -2,33 +2,31 @@
 setlocal ENABLEDELAYEDEXPANSION
 
 :: EDIT THIS LINE BELOW TO CHANGE THE VERSION OF ROS2 INSTALLED
+:: Use date from https://github.com/ros2/ros2/releases
 set "ROS2_VERSION=release-humble-20241205"
 REM The URL and zip file variables below will update based on the version inputted above, no need to edit these unless the upstream file structure has changed
 set "ROS2_ZIP=ros2-%ROS2_VERSION%-windows-release-amd64.zip"
 set "ROS2_URL=https://github.com/ros2/ros2/releases/download/%ROS2_VERSION%/%ROS2_ZIP%"
-set "ROS2_EXTRACTDIR=%ROS2_VERSION%-windows-release-amd64"
+set "ROS2_EXTRACTDIR=ros2-%ROS2_VERSION%-windows-release-amd64"
 
 :: Enable a log
 set LOGFILE=%USERPROFILE%\Downloads\ros2_install.log
 (
   echo ==== ROS2 Install started at %DATE% %TIME% ====
-  REM … rest of script …
-  echo ==== Completed at %DATE% %TIME% ====
-)>>"%LOGFILE%" 2>&1
 
 :: Prerequisite Checks:
 
 REM 1) Administrator privileges
 net session >nul 2>&1
 if %errorlevel% neq 0 (
-  echo [ERROR] This script requires Administrator privileges. Please right‑click and “Run as administrator.”
+  echo [ERROR] This script requires Administrator privileges. Please right‑click and "Run as administrator."
   exit /b 1
 )
 
 REM 2) winget availability
 where winget >nul 2>&1
 if %errorlevel% neq 0 (
-  echo [ERROR] winget not found. Install “App Installer” from the Microsoft Store.  
+  echo [ERROR] winget not found. Install "App Installer" from the Microsoft Store.  
   exit /b 1
 )
 
@@ -50,27 +48,28 @@ set "curlPath=%SystemRoot%\System32\curl.exe"
 
 :: Check if system's curl executable exists here
 if not exist "%curlPath%" (
-    echo curl not found at %curlPath%. Check if you are on Windows 10/11. Exiting...
+    echo [ERROR] curl not found at %curlPath%. Check if you are on Windows 10/11. Exiting...
     exit /b 1
-
+)
 
 
 REM INSTALL 7-zip
+echo Installing 7-Zip...
 winget install --id 7zip.7zip
 if %ERRORLEVEL% neq 0 (
-  echo 7-Zip install failed. Exiting...
+  echo [ERROR] 7-Zip install failed. Exiting...
   exit /b 1
 )
 
-REM use absolute path for 7zip. This is simpler than adding to PATH & forcing user to reboot:
+REM use absolute path for 7zip. This is simpler than adding to PATH & forcing user to reboot
+REM May be glitchy, requires further testing as potential issues arise for different environments (i.e. the user has an existing version of 7-zip that is out of date):
 set "zipPath=%ProgramFiles%\7-Zip\7z.exe"
 
 :: Check if 7-Zip executable exists here
 if not exist "%zipPath%" (
-    echo 7-Zip not found at %zipPath%. Exiting...
+    echo [ERROR] 7-Zip not found at %zipPath%. Exiting...
     exit /b 1
 )
-REM NEEDS TO BE INSTRUCTED TO INSTALL APP INSTALLER FROM WINDOWS STORE BEFORE RUNNING THIS SCRIPT
 
 
 
@@ -87,19 +86,38 @@ if /I "%POLICY%"=="Restricted" (
 ) else (
     echo Execution policy is currently set to %POLICY%. Proceeding to Chocolatey Install...
 )
+
+echo Installing Chocolatey...
 ::Run offical chocolatey install command
 powershell -NoProfile -ExecutionPolicy Bypass -Command "[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))"
+if %ERRORLEVEL% neq 0 (
+  echo [ERROR] Chocolatey install failed. Exiting…
+  exit /b 1
+)
 
 
 
 REM INSTALL Python
+echo Installing Python 3.8...
 winget install --id Python.Python.3.8 -v 3.8.3
-py -3.8.3 -m pip install -U pip setuptools==59.6.0
-py -3.8.3 -m pip install -U catkin_pkg cryptography empy importlib-metadata lark==1.1.1 lxml matplotlib netifaces numpy opencv-python PyQt5 pillow psutil pycairo pydot pyparsing==2.4.7 pyyaml rosdistro
+if %ERRORLEVEL% neq 0 (
+  echo [ERROR] Python 3.8 failed to install. Exiting…
+  exit /b 1
+)
 
+
+REM INSTALL PIP packages
+echo Installing PIP packages for Python 3.8
+py -3.8 -m pip install -U pip setuptools==59.6.0
+py -3.8 -m pip install -U catkin_pkg cryptography empy importlib-metadata lark==1.1.1 lxml matplotlib netifaces numpy opencv-python PyQt5 pillow psutil pycairo pydot pyparsing==2.4.7 pyyaml rosdistro
+if %ERRORLEVEL% neq 0 (
+  echo [ERROR] PIP (Python) packages failed to install. Check if Python is in system PATH. Exiting…
+  exit /b 1
+)
 
 
 REM INSTALL Visual C++ Libraries
+echo Installing Microsoft Visual C++ Redistributables...
 winget install --id Microsoft.VCRedist.2013.x64
 if %ERRORLEVEL% neq 0 (
   echo Microsoft Visual C++ 2013 (x64) install failed. Exiting...
@@ -124,9 +142,10 @@ if %ERRORLEVEL% neq 0 (
 
 
 REM INSTALL OpenSSL
+echo Installing OpenSSL 1.1.1
 choco install -y openssl --version 1.1.1.2100
 if %ERRORLEVEL% neq 0 (
-  echo OpenSSL install failed. Exiting...
+  echo [ERROR] OpenSSL install failed. Exiting...
   exit /b 1
 )
 setx /m OPENSSL_CONF "C:\Program Files\OpenSSL-Win64\bin\openssl.cfg"
@@ -139,21 +158,19 @@ set "vsfilename=program-installer.exe"
 
 
 echo Downloading Visual Studio Community 2019...
-curl -o "%vsfilename%" "%vsurl%"
+%curlPath% -o "%vsfilename%" "%vsurl%"
 if not exist "%vsfilename%" (
-    echo Download failed. URL unreachable. Exiting...
+    echo [ERROR] Visual Studio Community 2019 download failed. URL unreachable. Exiting...
     exit /b 1
 )
-
-REM MUST MUST MUST Prompt user to uncheck "C++ CMake tools for Windows"
-	::currently show user what to check in installation readme. Could be explained clearer
 start /wait vs_community.exe
 echo VS Studio 19 install complete.
 
 
 
 REM INSTALL OpenCV
-set "opencvurl=https://github.com/ros2/ros2/releases/download/opencv-archives/opencv-3.4.6-vc16.VS2019.zip”
+echo Installing OpenCV...
+set "opencvurl=https://github.com/ros2/ros2/releases/download/opencv-archives/opencv-3.4.6-vc16.VS2019.zip"
 set "opencvzipfile=opencv-3.4.6-vc16.VS2019.zip"
 
 "%curlPath%" -o "%opencvzipfile%" "%opencvurl%"
@@ -177,6 +194,7 @@ if not exist "C:\opencv" (
 
 
 REM INSTALL CMake
+echo Installing CMake
 winget install --id Kitware.CMake
 if %ERRORLEVEL% neq 0 (
   echo CMake install failed. Exiting...
@@ -190,19 +208,20 @@ setx /m PATH "%CMAKE_BIN%;%PATH%"
 :: Verify that CMake is available
 cmake --version
 if %errorlevel% neq 0 (
-    echo Error: CMake version check failed. Exiting...
+    echo [ERROR] CMake version check failed. Exiting...
     exit /b 1
 )
 
 
 
 REM INSTALL Random Choco Dependencies (From Offical ROS2 Repo)
-curl -O "https://github.com/ros2/choco-packages/releases/download/2022-03-15/asio.1.12.1.nupkg"
-curl -O "https://github.com/ros2/choco-packages/releases/download/2022-03-15/bullet.3.17.nupkg"
-curl -O "https://github.com/ros2/choco-packages/releases/download/2022-03-15/cunit.2.1.3.nupkg"
-curl -O "https://github.com/ros2/choco-packages/releases/download/2022-03-15/eigen.3.3.4.nupkg"
-curl -O "https://github.com/ros2/choco-packages/releases/download/2022-03-15/tinyxml-usestl.2.6.2.nupkg"
-curl -O "https://github.com/ros2/choco-packages/releases/download/2022-03-15/tinyxml2.6.0.0.nupkg"
+echo Installing Miscellaneous Chocolatey Packages
+%curlPath% -O "https://github.com/ros2/choco-packages/releases/download/2022-03-15/asio.1.12.1.nupkg"
+%curlPath% -O "https://github.com/ros2/choco-packages/releases/download/2022-03-15/bullet.3.17.nupkg"
+%curlPath% -O "https://github.com/ros2/choco-packages/releases/download/2022-03-15/cunit.2.1.3.nupkg"
+%curlPath% -O "https://github.com/ros2/choco-packages/releases/download/2022-03-15/eigen.3.3.4.nupkg"
+%curlPath% -O "https://github.com/ros2/choco-packages/releases/download/2022-03-15/tinyxml-usestl.2.6.2.nupkg"
+%curlPath% -O "https://github.com/ros2/choco-packages/releases/download/2022-03-15/tinyxml2.6.0.0.nupkg"
 
 choco install -y -s %CD% asio cunit eigen tinyxml-usestl tinyxml2 bullet
 if %ERRORLEVEL% neq 0 (
@@ -212,6 +231,7 @@ if %ERRORLEVEL% neq 0 (
 
 
 REM INSTALL Qt5
+echo Installing Qt5...
 set "qtDownloadUrl=https://download.qt.io/official_releases/qt/5.15/5.15.2/single/qt-everywhere-src-5.15.2.zip"
 set "qtZipFile=qt-everywhere-src-5.15.2.zip"
 set "qtExtractDir=Qt-5.15.2-Installer"
@@ -219,7 +239,7 @@ set "qtExtractDir=Qt-5.15.2-Installer"
 echo Downloading Qt 5.15.2 source code...
 "%curlPath%" -o "%qtZipFile%" "%qtDownloadUrl%"
 if not exist "%qtZipFile%" (
-    echo Error: Failed to download Qt source code. Exiting...
+    echo [ERROR] Failed to download Qt source code. Exiting...
     exit /b 1
 )
 
@@ -241,13 +261,14 @@ echo Qt5 install complete
 
 
 REM INSTALL Graphviz (needed for RQt)
-set "graphvizurl=https://gitlab.com/api/v4/projects/4207231/packages/generic/graphviz-releases/12.2.1/windows_10_cmake_Release_graphviz-install-12.2.1-win64.exe”
+echo Installing Graphviz 12.2.1
+set "graphvizurl=https://gitlab.com/api/v4/projects/4207231/packages/generic/graphviz-releases/12.2.1/windows_10_cmake_Release_graphviz-install-12.2.1-win64.exe"
 set "graphvizfile=windows_10_cmake_Release_graphviz-install-12.2.1-win64.exe"
 
 echo Downloading Graphviz 12.2.1...
 "%curlPath%" -o "%graphviz%"
 if not exist "%graphvizfile%" (
-    echo Download failed. Exiting...
+    echo [ERROR] Graphviz download failed, URL unreachable. Exiting...
     exit /b 1
 )
 
@@ -257,18 +278,17 @@ echo GraphViz install complete.
 
 
 REM Time to install ROS2 Humble!
-
-echo Downloading Qt 5.15.2 source code...
+echo Downloading ROS2 %ROS2_VERSION% binary...
 "%curlPath%" -o "%ROS2_ZIP%" "%ROS2_URL%"
 if not exist "%ROS2_ZIP%" (
-    echo Error: Failed to download ROS2 Humble. Exiting...
+    echo [ERROR] Failed to download ROS2 Humble. Exiting...
     exit /b 1
 )
 
 echo Extracting ROS2 from zip...
 "%zipPath%" x "%ROS2_ZIP%" -o "%CD%"
 if not exist "%ROS2_EXTRACTDIR%" (
-    echo Error: Extraction failed. Exiting...
+    echo [ERROR] ROS2 Zip Extraction failed. Exiting...
     exit /b 1
 )
 
@@ -277,8 +297,12 @@ start /wait ./%ROS2_EXTRACTDIR%/ros2-humble-20241205-windows-release-amd64.exe
 
 echo ROS2 install complete
 
+:: Close log
+ echo ==== Completed at %DATE% %TIME% ====
+)>>"%LOGFILE%" 2>&1
+
 echo All Installations Successful!
 REM This is a "press any button to continue" statement after the install is complete
-pause
 
 endlocal
+pause
